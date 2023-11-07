@@ -13,9 +13,13 @@ Konain Qureshi (quresk)
 ## Overview and Diagrams
 
 ### Architecture
+An architecture diagram showing the components of our system. Metamask is the player's wallet which will be connected to our user interface (transaction API). Prices will be stored on the user interface and AI will be update those prices based on feedback from successful smart contract transactions which will be relayed back to the user interface.
+
 ![High-level Diagram for Architecture/Component](./assets/Architecture%20Diagram.png)
 
 ### Sequence Diagram
+Below is a diagram showing the buy item process.
+
 ![High-level Diagram for Architecture/Component](./assets/Sequence%20Diagram.png)
 
 ### AI Overview
