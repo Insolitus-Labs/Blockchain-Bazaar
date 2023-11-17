@@ -1,11 +1,11 @@
 .main-app {
   text-align: center;
-  margin: 100px;
+  margin: 50px;
 }
 
 .header img {
-  width: 100px;
-  height: 100px;
+  width: 30px;
+  height: 30px;
 }
 
 .header h1 {
@@ -27,6 +27,6 @@
 }
 
 .mint-nft-button {
-  background: orange;
+  background: green;
 }
 

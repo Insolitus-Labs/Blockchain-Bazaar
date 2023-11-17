@@ -1,80 +1,25 @@
-import { useEffect } from 'react';
-import { useState } from 'react';
+import MetaMask from './components/MetaMask';
+import Table from "./components/Table";
 import './App.css';
+import testData from "./testData.json";
 
-function App() {
+const columns = [
+  { label: "Item", accessor: "item", sortable: true },
+  { label: "Price", accessor: "price", sortable: true },
+  { label: "Quantity", accessor: "quantity", sortable: true },
+]
 
-  const [currentAccount, setCurrentAccount] = useState(null);
-    
-  const checkWalletIsConnected = async () => {
-    const { ethereum } = window;
-
-    if (!ethereum) {
-      console.log("Make sure to have Metamask installed!");
-      return;
-    } else {
-      console.log("Wallet exists! Happy trading!");
-    }
-
-    const accounts = await ethereum.request({ method: 'eth_accounts' });
-
-    if (accounts.length !== 0) {
-      const account = accounts[0];
-      console.log("Found an authorized account: ", account);
-      setCurrentAccount(account);
-    } else {
-      console.log("No authorized account found");
-    }
-  }
-    
-  const connectWalletHandler = async () => {
-    const { ethereum } = window;
-
-    if (!ethereum) {
-      alert("Please install Metamask!");
-    }
-
-    try {
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-      console.log("Found an account! Address: ", accounts[0]);
-      setCurrentAccount(accounts[0]);
-    } catch (err) {
-      console.log(err)
-    }
-  }
-    
-  const connectWalletButton = () => {
-    return (
-      <button onClick={connectWalletHandler} className='cta-button connect-wallet-button'>
-        Connect Wallet
-      </button>
-    )
-  }
-
-  const mintNftHandler = () => {}
-
-  const mintNftButton = () => {
-    return (
-      <button onClick={mintNftHandler} className='cta-button mint-nft-button'>
-        Test Button
-      </button>
-    )
-  }
-
-  useEffect(() => {
-    checkWalletIsConnected();
-  }, [])
-
+export default function App() {
   return (
     <div className='main-app'>
       <div class="header">
         <h1><img src="/logo_coin.png" alt="logo"/>Blockchain Bazaar</h1>
       </div>
-      <div>
-        {currentAccount ? mintNftButton() : connectWalletButton()}
+      <MetaMask />
+      <div className="table_container">
+        <h2>Available Items</h2>
+        <Table data={testData} columns={columns}/>
       </div>
     </div>
   );
 }
-
-export default App;
