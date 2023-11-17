@@ -9,16 +9,17 @@ def create_data_file(order):
   #                     'sell'
   # (for giving data)   'bought'
   #                     'sold'
-  #                              ,weight,defense,damage,range,speed,price
+  #                              ,rarity,level,weight,defense,damage,range,speed,price
   # i.e. "buy,35,0,40,32,19,0" or "sold,35,0,40,32,19,145"
   query = (order.startswith("buy") or order.startswith("sell"))
   buy = (order.startswith("b"))
   stats = [int(x) for x in re.sub(r'[A-Za-z]+,', '', order).split(",")]
   label = stats[5]
   features = np.full((1, 500), 0)
-  for i in range(0, 6):
+  features[0, stats[0] + 1] = 1
+  for i in range(1, 8):
     if stats[i] != 0:
-      features[0, (i * 100 - 1) + stats[i]] = 1
+      features[0, (i * 100 + 3) + stats[i]] = 1
   print(features[0])
   return features, label, query, buy
 
