@@ -33,7 +33,7 @@ Table
 .table_container {
   max-width: 750px;
   /* max-height: 500px; */
-  margin: 0 auto;
+  margin:  auto;
   overflow: auto;
 }
 
@@ -53,7 +53,7 @@ caption {
   padding: 8px 10px;
   border-bottom: 1px solid #1a1a1a;
   font-weight: bold;
-  text-align: left;
+  text-align: center;
 }
 
 th.up, th.default, th.down {

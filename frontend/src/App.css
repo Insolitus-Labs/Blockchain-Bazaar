@@ -4,12 +4,13 @@
 }
 
 .header img {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
 }
 
 .header h1 {
   position: relative;
+  font-size: 3em;
 }
 
 .cta-button {
@@ -30,3 +31,21 @@
   background: green;
 }
 
+.action-button {
+  padding: 5px;
+  border: none;
+  border-radius: 3px;
+  min-width: 25px;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  margin: 2px;
+}
+
+.buy-button {
+  background: lightskyblue;
+}
+
+.sell-button {
+  background: orangered;
+}

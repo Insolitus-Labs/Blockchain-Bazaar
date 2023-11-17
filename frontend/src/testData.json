@@ -28,5 +28,17 @@
         "item": "gold bar",
         "price": 5000,
         "quantity": 4
+    },
+    {
+        "id": 6,
+        "item": "rotten cheese",
+        "price": 2,
+        "quantity": 20
+    },
+    {
+        "id": 7,
+        "item": "evil chicken",
+        "price": 350,
+        "quantity": 4
     }
 ]
