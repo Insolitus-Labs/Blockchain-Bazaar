@@ -56,7 +56,7 @@ function App() {
   const mintNftButton = () => {
     return (
       <button onClick={mintNftHandler} className='cta-button mint-nft-button'>
-        Mint NFT
+        Test Button
       </button>
     )
   }
@@ -67,7 +67,9 @@ function App() {
 
   return (
     <div className='main-app'>
-      <h1>Blockchain Bazaar</h1>
+      <div class="header">
+        <h1><img src="/logo_coin.png" alt="logo"/>Blockchain Bazaar</h1>
+      </div>
       <div>
         {currentAccount ? mintNftButton() : connectWalletButton()}
       </div>

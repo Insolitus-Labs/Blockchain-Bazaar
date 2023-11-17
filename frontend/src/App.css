@@ -3,6 +3,15 @@
   margin: 100px;
 }
 
+.header img {
+  width: 100px;
+  height: 100px;
+}
+
+.header h1 {
+  position: relative;
+}
+
 .cta-button {
   padding: 15px;
   border: none;
