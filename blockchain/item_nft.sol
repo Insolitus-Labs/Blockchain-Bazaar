@@ -1,20 +1,30 @@
 pragma solidity ^0.8.20;
 
-import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 
 import  "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
-contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable, ChainlinkClient {
-    using Chainlink for Chainlink.Request;
+import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_0/FunctionsClient.sol";
+import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
+import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_0/libraries/FunctionsRequest.sol";
 
-    uint256 private mint_count;
-    address private immutable ORACLE  = 0x6090149792dAAeE9D1D568c9f9a6F6B46AA29eFD;
-    address private immutable SEPOLIA_LINK = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
-    bytes32 private immutable JOB  = "ca98366cc7314957b8c012c72f05aeeb";
-    uint256 private immutable ORACLE_PAYMENT = (1 * LINK_DIVISIBILITY) / 10;
+contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
+    using FunctionsRequest for FunctionsRequest.Request;
+
+    uint256 public mint_count;
+    uint64 private subscriptionId = 1662;
+
+
+    bytes32 public prev_req_id;
+    bytes s_lastResponse;
+    bytes s_lastError;
+    uint32 gasLimit = 300000;
+
+    bytes32 donID =
+        0x66756e2d657468657265756d2d7365706f6c69612d3100000000000000000000;
+    address router = 0xb83E47C2bC239B3bf370bc41e1459A34b41238D0;
 
     mapping(bytes32 => Order) order_book;
 
@@ -27,14 +37,28 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable, ChainlinkClient {
 
     event RequestPrice(bytes32 indexed requestId, uint256 price);
 
-    constructor() Ownable(msg.sender) ERC721("Temp Item", "TMP") {
-		  setChainlinkToken(SEPOLIA_LINK);
-		  setChainlinkOracle(ORACLE);
+    constructor() FunctionsClient(router) ERC721("Temp Item", "TMP") Ownable(msg.sender) {
 		  mint_count = 0;
     }
 
+    fallback() external payable {
+      getCost(msg.sender,false,0x0,msg.value);
+    }
+    receive() external payable {
+      getCost(msg.sender,false,0x0,msg.value);
+    }
+
+    /* */
+    uint256 public price;
+    function test_mint() public returns(uint256) {
+      _mint(msg.sender,mint_count);
+      mint_count += 1; 
+      return mint_count-1;
+    }
+
+
     function queueBuy() public payable {
-        getCost(msg.sender,false,0x0,msg.value);
+      getCost(msg.sender,false,0x0,msg.value);
     }
 
     function queueSell(uint256 _tokenId) public payable {
@@ -46,40 +70,60 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable, ChainlinkClient {
 
     }
 
+    string source =
+        "const apiResponse = await Functions.makeHttpRequest({"
+        "url: `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD`"
+        "});"
+        "if (apiResponse.error) {"
+        "throw Error('Request failed');"
+        "}"
+        "const { data } = apiResponse;"
+        "return Functions.encodeencodeNumber(data.RAW.ETH.USD.VOLUME24HOUR);"; /* TODO */
+
+
     function getCost(address sender, bool order_type, uint256 token_id, uint256 value) public returns(bytes32) {
       
-      Chainlink.Request memory req = 
-                  buildChainlinkRequest(JOB, address(this), this.fulfill.selector);
-      req.add("get", 'https://pokeapi.co/api/v2/pokemon/1');
-      req.add("path", "price");
-      bytes32 req_id = sendChainlinkRequest(req, ORACLE_PAYMENT);
+      FunctionsRequest.Request memory req;
+      req.initializeRequestForInlineJavaScript(source);
 
+      bytes32 req_id = _sendRequest(
+            req.encodeCBOR(),
+            subscriptionId,
+            gasLimit,
+            donID
+        );
+
+      prev_req_id = req_id;
       order_book[req_id] = Order(sender,order_type,token_id,value);
 
 		  return req_id;
     }
 
-    function fulfill(
-        bytes32 _requestId,
-        uint256 _price
-    ) public recordChainlinkFulfillment(_requestId) {
-        emit RequestPrice(_requestId, _price);
-        Order memory o = order_book[_requestId];
-        
-        if(o.order_type == false){
-          buy(o,_price);
+
+    function fulfillRequest(
+        bytes32 requestId,
+        bytes memory response,
+        bytes memory err
+    ) internal override {
+        s_lastResponse = response;
+        s_lastError = err;
+        price = 0;
+
+        if(order_book[requestId].order_type == false){
+          buy(order_book[requestId],price);
         }
         else{
-          sell(o,_price);
+          sell(order_book[requestId],price);
         }
+        emit RequestPrice(requestId, price);
     }
 
-    function buy(Order memory o ,uint256 cost) public payable {
-        if(o.value < cost){
+    function buy(Order memory o, uint256 cost) public payable {
+        /*if(o.value < cost){
             (bool success,) = o.caller_id.call{gas:10000,value:o.value}("");
             require(success,"Cannot Refund Eth");
             return;
-        }
+        }*/
         _mint(o.caller_id,mint_count);
 		    mint_count += 1;
     }
@@ -90,15 +134,5 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable, ChainlinkClient {
 		  require(success,"Cannot Send Eth");
     }
 
-    /**
-     * Allow withdraw of Link tokens from the contract
-     */
-    function withdrawLink() public onlyOwner {
-        LinkTokenInterface link = LinkTokenInterface(chainlinkTokenAddress());
-        require(
-            link.transfer(msg.sender, link.balanceOf(address(this))),
-            "Unable to transfer"
-        );
-    }
 
 }
