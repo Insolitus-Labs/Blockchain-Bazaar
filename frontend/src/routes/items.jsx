@@ -1,7 +1,7 @@
 export default function Items() {
     return (
-        <div>
-            <h1>Blockchain Bazaar</h1>
-        </div>
+        <body>
+            <h1>A list of items</h1>
+        </body>
     )
 }

@@ -9,7 +9,7 @@ const columns = [
   { label: "Quantity", accessor: "quantity", sortable: true },
 ]
 
-export default function App() {
+export default function Shop() {
   return (
     <div className='main-app'>
       <div className="table_container">

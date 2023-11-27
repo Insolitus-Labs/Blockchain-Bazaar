@@ -51,6 +51,7 @@ body {
   border-right: solid 1px #e3e3e3;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 #sidebar > * {
@@ -74,7 +75,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-bottom: 2rem;
   border-bottom: 1px solid #e3e3e3;
 }
 
@@ -138,4 +139,22 @@ body {
   align-items: center;
   justify-content: center;
   width: 100%;
+}
+
+.cta-button {
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  min-width: 220px;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.connect-wallet-button {
+  background: rgb(32, 129, 226);
+}
+
+.mint-nft-button {
+  background: green;
 }
