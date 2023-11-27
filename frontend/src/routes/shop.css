@@ -1,0 +1,65 @@
+.main-app {
+  text-align: center;
+}
+
+.action-button {
+  padding: 5px;
+  border: none;
+  border-radius: 3px;
+  min-width: 25px;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  margin: 2px;
+}
+
+.buy-button {
+  background: lightskyblue;
+}
+
+.sell-button {
+  background: orangered;
+}
+
+.table_container {
+  max-width: 750px;
+  /* max-height: 500px; */
+  margin:  auto;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-spacing: 0;
+}
+
+.table th {
+  background: #fff;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1a1a1a;
+  font-weight: bold;
+  text-align: center;
+}
+
+th.up, th.default, th.down {
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: center right;
+}
+
+.table td {
+  border-top: 1px solid #ddd;
+  padding: 8px 20px;
+}
+
+.table tbody tr:first-child td {
+  border-top: none;
+}
+
+.table tbody tr:nth-child(n) td {
+  background: #eff0f0;
+}
+
+.table tbody tr:nth-child(2n) td {
+  background: #fff;
+}
