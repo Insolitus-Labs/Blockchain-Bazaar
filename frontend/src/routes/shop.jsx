@@ -1,7 +1,7 @@
-import MetaMask from './components/MetaMask';
-import Table from "./components/Table";
-import './App.css';
-import testData from "./testData.json";
+import Table from "../components/Table";
+
+import './shop.css';
+import testData from "../testData.json";
 
 const columns = [
   { label: "Item", accessor: "item", sortable: true },
@@ -12,10 +12,6 @@ const columns = [
 export default function App() {
   return (
     <div className='main-app'>
-      <div class="header">
-        <h1><img src="/logo_coin.png" alt="logo"/>Blockchain Bazaar</h1>
-      </div>
-      <MetaMask />
       <div className="table_container">
         <h2>Available Items</h2>
         <Table data={testData} columns={columns}/>
