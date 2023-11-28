@@ -63,11 +63,15 @@ Metamask will be utilized as our player’s wallets and SepoliaETH as the curren
 
 ## Setup Project
 1. Clone repository
-2. Install dependencies and packages in root folder with `npm install`
+2. Navigate to the blockchain folder with `cd blockchain`
+3. Install package dependencies with `npm install`
 
 ### Frontend
-1. `cd frontend` to navigate to the frontend folder
-2. Start the user interface with `npm start`
+1. Return to root folder then `cd frontend` to navigate to the frontend folder
+2. The frontend has different package dependencies so do `npm install` again
+3. Start the user interface with `npm start`
+
+
 
 ## Testing Plan
 The AI will be tested by graphing rewards over training times
