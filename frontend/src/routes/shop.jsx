@@ -1,6 +1,6 @@
 import Table from "../components/Table";
 
-import './shop.css';
+import '../css/shop.css';
 import testData from "../testData.json";
 
 const columns = [

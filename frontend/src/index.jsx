@@ -7,7 +7,7 @@ import ErrorPage from './routes/error-page';
 import Shop from './routes/shop';
 import Items from './routes/items';
 
-import './index.css';
+import './css/index.css';
 
 const router = createBrowserRouter([
   {
