@@ -72,7 +72,7 @@ base_ols = LinearRegression(lambda_=10., fit_intercept=True, method="sm")
 
 ## Metaheuristic
 linucb = LinUCB(nchoices = nchoices, beta_prior = None, alpha = 0.1,
-                ucb_from_empty = False, random_state = 1111)
+                ucb_from_empty = False, random_state = 1111, assume_unique_reward = True)
 
 # This list will keep track of the rewards obtained
 rewards = list()
@@ -160,6 +160,5 @@ plt.xticks([i*40 for i in range(8)], [i*2000 for i in range(8)])
 
 plt.xlabel('Rounds (models were updated every 50 rounds)', size=30)
 plt.ylabel('Cumulative Mean Reward', size=30)
-plt.title('Comparison of Online Contextual Bandit Policies\n(Streaming-data mode)\n\nBibtext Dataset\n(159 categories, 1836 attributes)',size=30)
 plt.grid()
 plt.show()
