@@ -39,6 +39,12 @@ function Home() {
               Blockchain Bazaar aims to take the best of both systems by using blockchain to secure trades and maintain unique items while AI is used to alter prices based on user transactions.
             </p>
           </body>
+          <h2>Our Team</h2>
+          <ul>
+            <li>Lorenzo Mercado</li>
+            <li>Justin Chang</li>
+            <li>Konain Qureshi</li>
+          </ul>
       </div>
   )
 }
