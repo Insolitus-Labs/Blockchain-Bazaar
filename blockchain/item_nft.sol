@@ -1,25 +1,24 @@
 pragma solidity ^0.8.20;
 
-import "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 
 import  "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_0/FunctionsClient.sol";
-import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_0/libraries/FunctionsRequest.sol";
 
-contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
+contract BlockChainBazaar is  ERC721URIStorage, Ownable, FunctionsClient  {
     using FunctionsRequest for FunctionsRequest.Request;
 
     uint256 public mint_count;
     uint64 private subscriptionId = 1662;
 
 
-    bytes32 public prev_req_id;
-    bytes s_lastResponse;
-    bytes s_lastError;
+    bytes32 public prev_req_id;  // turn private
+    bytes public s_lastResponse; // turn private
+    bytes public s_lastError;
     uint32 gasLimit = 300000;
 
     bytes32 donID =
@@ -33,6 +32,7 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
       bool order_type; // Buy: 0  ||  Sell: 1
       uint256 _tokenId;
       uint256 value;
+      string uri;
     }
 
     event RequestPrice(bytes32 indexed requestId, uint256 price);
@@ -42,23 +42,24 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
     }
 
     fallback() external payable {
-      getCost(msg.sender,false,0x0,msg.value);
+      //getCost(msg.sender,false,0x0,msg.value);
     }
     receive() external payable {
-      getCost(msg.sender,false,0x0,msg.value);
+      //getCost(msg.sender,false,0x0,msg.value);
     }
 
     /* */
     uint256 public price;
-    function test_mint() public returns(uint256) {
+    function test_mint(string memory uri) public returns(uint256) {
       _mint(msg.sender,mint_count);
+      _setTokenURI(mint_count,uri);
       mint_count += 1; 
       return mint_count-1;
     }
 
 
-    function queueBuy() public payable {
-      getCost(msg.sender,false,0x0,msg.value);
+    function queueBuy(string memory uri) public payable {
+      getCost(msg.sender,false,0x0,msg.value, uri);
     }
 
     function queueSell(uint256 _tokenId) public payable {
@@ -66,22 +67,23 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
 		
       require(msg.sender == ownerOf(_tokenId), "You are not the owner of this NFT.");
 
-      getCost(msg.sender,true,_tokenId,msg.value);
+      getCost(msg.sender,true,_tokenId,msg.value,"");
 
     }
 
     string source =
         "const apiResponse = await Functions.makeHttpRequest({"
-        "url: `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD`"
+        "url: `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD`" /* Concat URI with in the URL to protect against forgery */
         "});"
         "if (apiResponse.error) {"
         "throw Error('Request failed');"
         "}"
         "const { data } = apiResponse;"
-        "return Functions.encodeencodeNumber(data.RAW.ETH.USD.VOLUME24HOUR);"; /* TODO */
+        "const val = parseInt(data.RAW.ETH.USD.VOLUME24HOUR);"
+        "return Functions.encodeUint256(val);"; /* TODO */
 
 
-    function getCost(address sender, bool order_type, uint256 token_id, uint256 value) public returns(bytes32) {
+    function getCost(address sender, bool order_type, uint256 token_id, uint256 value, string memory uri) public returns(bytes32) {
       
       FunctionsRequest.Request memory req;
       req.initializeRequestForInlineJavaScript(source);
@@ -94,7 +96,7 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
         );
 
       prev_req_id = req_id;
-      order_book[req_id] = Order(sender,order_type,token_id,value);
+      order_book[req_id] = Order(sender,order_type,token_id,value,uri);
 
 		  return req_id;
     }
@@ -107,7 +109,7 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
     ) internal override {
         s_lastResponse = response;
         s_lastError = err;
-        price = 0;
+        price = bytesToUint(response); // Temporary
 
         if(order_book[requestId].order_type == false){
           buy(order_book[requestId],price);
@@ -125,6 +127,7 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
             return;
         }*/
         _mint(o.caller_id,mint_count);
+        _setTokenURI(mint_count,o.uri);
 		    mint_count += 1;
     }
 
@@ -134,5 +137,15 @@ contract BlockChainBazaar is ERC721, ERC721Burnable, Ownable,FunctionsClient {
 		  require(success,"Cannot Send Eth");
     }
 
+    function bytesToUint(bytes memory b) public pure returns (uint256){
+        uint256 number;
+        for(uint i=0;i<b.length;i++){
+            number = number + uint8(b[i])*(2**(8*(b.length-(i+1))));
+        }
+        return number;
+    }
 
+    function getURI(uint256 token_id) public view returns (string memory){
+        return tokenURI(token_id);
+    }
 }
