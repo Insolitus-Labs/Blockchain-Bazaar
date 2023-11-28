@@ -61,7 +61,15 @@ A permissionless blockchain to keep single line of truth for transactions as wel
 
 Metamask will be utilized as our player’s wallets and SepoliaETH as the currency.
 
-### Testing Plan
+## Setup Project
+To run the project, please clone the respository in the desired location first.
+
+### Frontend
+1. While in the root of the repository, navigate to the frontend folder with `cd frontend`.
+2. Run `npm install` to install dependencies and packages
+3. Start the project with `npm start`.
+
+## Testing Plan
 The AI will be tested by graphing rewards over training times
 There will be two models, one to sell and one to buy, both will be tested at the same time
 - Online (batched) testing will use randomly generated data made to reflect item stats
@@ -99,11 +107,3 @@ The website/API will be tested by multiple clients
   - Put in buy/sell orders to the blockchain and ensure transactions go through
   - once transaction goes through ensure the website updates model and changes information (price, quantity etc)
   - Run API integration tests for blockchain (described in blockchain testing)
-
-## Setup Project
-To run the project, please clone the respository in the desired location first.
-
-### Frontend
-1. While in the root of the repository, navigate to the frontend folder with `cd frontend`.
-2. Run `npm install` to install dependencies and packages
-3. Start the project with `npm start`.
