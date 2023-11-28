@@ -21,6 +21,7 @@ def parse_data(filename):
     return features, labels
 
 X, y = parse_data("Bibtex_data.txt")
+
 '''
 from sklearn.linear_model import LogisticRegression
 from contextualbandits.online import BootstrappedUCB
