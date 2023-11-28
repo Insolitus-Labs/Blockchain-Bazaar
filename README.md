@@ -62,12 +62,12 @@ A permissionless blockchain to keep single line of truth for transactions as wel
 Metamask will be utilized as our player’s wallets and SepoliaETH as the currency.
 
 ## Setup Project
-To run the project, please clone the respository in the desired location first.
+1. Clone repository
+2. Install dependencies and packages in root folder with `npm install`
 
 ### Frontend
-1. While in the root of the repository, navigate to the frontend folder with `cd frontend`.
-2. Run `npm install` to install dependencies and packages
-3. Start the project with `npm start`.
+1. `cd frontend` to navigate to the frontend folder
+2. Start the user interface with `npm start`
 
 ## Testing Plan
 The AI will be tested by graphing rewards over training times
