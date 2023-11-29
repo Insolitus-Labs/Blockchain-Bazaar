@@ -25,10 +25,6 @@ def parse_data(order):
 # features, label, query, buy = parse_data("buy,1,0,40,32,19,0,43,25")
 # print(features, label, query, buy)
 
-# round a number to the nearest 10
-def round10(num):
-  return 10 * round(num/10)
-
 # creates a large set of random data
 # defaults price to be addition of all features
 def create_data():
@@ -41,7 +37,7 @@ def create_data():
       level = np.random.randint(0, 99)
       weight = np.random.randint(0, 99)
       defense = np.random.randint(0, 99)
-      price = round10(rarity + level + weight + defense)
+      price = rarity + level + weight + defense
       features[i], labels[i], _, _ = parse_data(f'sell,{rarity},{level},{weight},{defense},0,0,0,{price}')
     if type == 1: # offense i.e weapon
       rarity = np.random.randint(0, 3)
@@ -50,13 +46,13 @@ def create_data():
       damage = np.random.randint(0, 99)
       a_range = np.random.randint(0, 99)
       speed = np.random.randint(0, 99)
-      price = round10(rarity + level + weight + damage + speed + a_range)
+      price = rarity + level + weight + damage + speed + a_range
       features[i], labels[i], _, _ = parse_data(f'sell,{rarity},{level},{weight},0,{damage},{a_range},{speed},{price}')
     if type == 2: # misc
       rarity = np.random.randint(0, 3)
       level = np.random.randint(0, 99)
       weight = np.random.randint(0, 99)
-      price = round10(rarity + level + weight)
+      price = rarity + level + weight
       features[i], labels[i], _, _ = parse_data(f'sell,{rarity},{level},{weight},0,0,0,0,{price}')
   return features, labels
 
