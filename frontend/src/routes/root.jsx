@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import MetaMask from '../components/metamask';
+import MetaMask from '../components/MetaMask';
 
 export default function Root() {
     return (
