@@ -1,7 +1,7 @@
 import contract from '../contracts/contract.json';
 
 const ethers = require("ethers");
-const contractAddress = "0xd927DD054f1B1C5a4BC56b8C71aB5e598d667713";
+const contractAddress = "0x3Ef28FdB2ab2724B4Fc2662CF1C31b3BA30b5BCe";
 const abi = contract;
 
 const TableBody = ({ tableData, columns }) => {
@@ -18,6 +18,7 @@ const TableBody = ({ tableData, columns }) => {
         let nftTxn = await nftContract.queueBuy(uri, { value: ethers.parseEther(price.toString()) });
   
         console.log("Mining... please wait");
+        window.alert("Mining... please wait");
         await nftTxn.wait();
         
         console.log(`Mined, see transaction: https://sepolia.etherscan.io/tx/${nftTxn.hash}`);
@@ -45,6 +46,7 @@ const TableBody = ({ tableData, columns }) => {
           let nftTxn = await nftContract.queueSell(parseInt(tokenId));
     
           console.log("Burning... please wait");
+          window.alert("Burning... please wait");
           await nftTxn.wait();
     
           console.log(`Burnt, see transaction: https://sepolia.etherscan.io/tx/${nftTxn.hash}`);
