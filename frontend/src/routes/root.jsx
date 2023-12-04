@@ -11,9 +11,6 @@ export default function Root() {
                         <li>
                             <a href={'/shop'}>Shop</a>
                         </li>
-                        <li>
-                            <a href={'/items'}>Items</a>
-                        </li>
                     </ul>
                 </nav>
                 <MetaMask />

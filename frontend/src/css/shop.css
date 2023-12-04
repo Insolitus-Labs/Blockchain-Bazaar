@@ -14,16 +14,15 @@
 }
 
 .buy-button {
-  background: lightskyblue;
+  background: #429bf5;
 }
 
 .sell-button {
-  background: orangered;
+  background: #f54242;
 }
 
 .table_container {
-  max-width: 750px;
-  /* max-height: 500px; */
+  max-width: 900px;
   margin:  auto;
   overflow: auto;
 }
