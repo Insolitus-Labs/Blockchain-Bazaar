@@ -49,7 +49,7 @@ def api_get_items():
     for i in items:
         features, _ = parse_data(int(i['rarity']), int(i['level']), 
                                  int(i['weight']), int(i['defense']), 
-                                 int(i['damage']), int(i['range']),
+                                 int(i['damage']), int(i['range']), 
                                  int(i['speed']), 0)
         
         tmp_i = dict(i)
@@ -104,13 +104,16 @@ def api_sc_price():
     # request AI for prices
     # price = askQuery(features, is_buy)
     price = item_costs[data['item']]["buy_price"] if is_buy else item_costs[data['item']]["sell_price"]
+    
+    return_dict = {"price" : price * (10**18) / 10000,"refund" : eth_sent - price}
+    
     if(price <= eth_sent):
         features, label = parse_data(int(data['rarity']), int(data['level']), 
                              int(data['weight']), int(data['defense']), 
                              int(data['damage']), int(data['range']),
                              int(data['speed']), price)
         giveData(features, label, is_buy)
-        new_price = askQuery(features, is_buy)
+        new_price = askQuery(features, is_buy) / 10000
         
         if(is_buy):
             item_costs[data['item']]["buy_price"] = new_price
@@ -118,8 +121,7 @@ def api_sc_price():
             item_costs[data['item']]["sell_price"] = new_price
         # AI.update_price(buy_or_sell,damage,weight)
     
-    price = price * (10**18) / 10000 # WEI
-    return {"price" : price,"refund" : eth_sent - price}
+    return return_dict
 
 
 import re, numpy as np
