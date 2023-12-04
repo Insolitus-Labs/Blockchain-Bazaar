@@ -1,6 +1,7 @@
 from flask import Flask, request
 
-'''
+# Lines of code to enter to start up flask app for debugging or testing
+''' 
 export FLASK_APP=online
 export FLASK_ENV=development
 flask run
@@ -8,6 +9,8 @@ flask run
 
 ai = Flask(__name__)
 
+# this routine handles the seller model which the ai uses to price
+# its own items to be sold to players
 @ai.route('/sell')
 def sell():
   data = request.args
@@ -27,6 +30,8 @@ def sell():
       return("Data received")
   return("Bad call")
 
+# this handles the buyer model which handles how much the ai pays
+# for items it buys from players
 @ai.route('/buy')
 def buy():
   data = request.args
@@ -47,7 +52,7 @@ def buy():
   return("Bad call")
 
 
-import re, numpy as np
+import numpy as np
 from contextualbandits.online import LinUCB
 
 # batch size - algorithm will be refit after N rounds
@@ -56,7 +61,7 @@ batch_size = 50
 # there are 100 outputs possible by the model
 nchoices = 100
 
-# models, action history, and rewards are stored in a map with key as modelId
+# models are stored in a map with key as modelId
 # create both the map and global variables to allow for either way of calling
 # for debugging and testing purposes
 
@@ -86,43 +91,6 @@ models = {
   1: buyer
 }
 
-seller_actions = np.array(nchoices)
-buyer_actions = np.array(nchoices)
-
-actions = {
-  0: seller_actions,
-  1: buyer_actions
-}
-
-seller_rewards = list()
-buyer_rewards = list()
-
-rewards = {
-  0: seller_rewards,
-  1: buyer_rewards
-}
-
-# function to run through a single round given one piece of data and its label
-# modelId is 0 for seller and 1 for buyer
-def single_round(data, label, modelId):
-    
-    # choosing actions for this batch
-    action = models[modelId].predict(data).astype('uint8')
-    
-    # keeping track of the sum of rewards received
-    rewards[modelId].append(label[action])
-    
-    # adding this batch to the history of selected actions
-    new_actions_hist = np.append(actions[modelId], action)
-    
-    # rewards obtained now
-    reward = label[action]
-    
-    # now refitting the algorithms after observing these new rewards
-    models[modelId].partial_fit(data, action, reward)
-    
-    return new_actions_hist
-
 # takes the stats of an item and returns the two arrays needed by the model
 def parse_data(rarity, level, weight, defense, damage, a_range, speed, price):
   label = np.zeros(100)
@@ -136,13 +104,12 @@ def parse_data(rarity, level, weight, defense, damage, a_range, speed, price):
 def askQuery(data, modelId):
   top5 = models[modelId].topN(data, 5) * 10
   if modelId == 0:
-    top5[::-1].sort()
+    top5[0][::-1].sort()
   else:
-    top5.sort()
-  print(top5)
+    top5[0].sort()
   answer = 0
   for i in range(5):
-    if i < 3:
+    if i < 4:
       answer += top5[0,i] / 2**(i + 1)
     else:
       answer += top5[0,i] / 2**(i)
@@ -151,7 +118,14 @@ def askQuery(data, modelId):
 # given data (features of an item), a label (array with binary label data) and a modelId
 # runs a single round (partial fit with new data) with batch size 1 (only this new data) on the specified model
 def giveData(data, label, modelId):
-  single_round(data, label, modelId)
+    # choosing actions for this batch
+    action = models[modelId].predict(data).astype('uint8')
+    
+    # rewards obtained now
+    reward = label[action]
+    
+    # now refitting the algorithms after observing these new rewards
+    models[modelId].partial_fit(data, action, reward)
 
 
 ################ Offline Pretraining  ################
@@ -186,17 +160,11 @@ def create_data(amount):
       features[i], labels[i] = parse_data(rarity, level, weight, 0, 0, 0, 0, price)
   return features, labels
 
-def simulate_rounds_stoch(model, rewards, actions_hist, X_batch, y_batch, rnd_seed):
+def simulate_rounds_stoch(model, X_batch, y_batch, rnd_seed):
     np.random.seed(rnd_seed)
     
     ## choosing actions for this batch
     actions_this_batch = model.predict(X_batch).astype('uint8')
-    
-    # keeping track of the sum of rewards received
-    rewards.append(y_batch[np.arange(y_batch.shape[0]), actions_this_batch].sum())
-    
-    # adding this batch to the history of selected actions
-    new_actions_hist = np.append(actions_hist, actions_this_batch)
     
     # rewards obtained now
     rewards_batch = y_batch[np.arange(y_batch.shape[0]), actions_this_batch]
@@ -204,8 +172,6 @@ def simulate_rounds_stoch(model, rewards, actions_hist, X_batch, y_batch, rnd_se
     # now refitting the algorithms after observing these new rewards
     np.random.seed(rnd_seed)
     model.partial_fit(X_batch, actions_this_batch, rewards_batch)
-    
-    return new_actions_hist
 
 X, y = create_data(15000)
 
@@ -215,17 +181,14 @@ action_chosen = np.random.randint(nchoices, size=batch_size)
 rewards_received = y[np.arange(batch_size), action_chosen]
 
 models[0].fit(X=first_batch, a=action_chosen, r=rewards_received)
-actions[0] = action_chosen.copy()
 
 action_chosen = np.random.randint(nchoices, size=batch_size)
 rewards_received = y[np.arange(batch_size), action_chosen]
 
 models[1].fit(X=first_batch, a=action_chosen, r=rewards_received)
-actions[1] = action_chosen.copy()
 
 # running all pre-training rounds
 for model in range (2):
-  print(model)
   for i in range(int(np.floor(X.shape[0] / batch_size)) - 1):
     batch_st = (i + 1) * batch_size
     batch_end = (i + 2) * batch_size
@@ -233,8 +196,4 @@ for model in range (2):
     
     X_batch = X[batch_st:batch_end, :]
     y_batch = y[batch_st:batch_end, :]
-    actions[model] = simulate_rounds_stoch(models[model],
-                                                   rewards[model],
-                                                   actions[model],
-                                                   X_batch, y_batch,
-                                                   rnd_seed = batch_st)
+    simulate_rounds_stoch(models[model], X_batch, y_batch, rnd_seed = batch_st)
