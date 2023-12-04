@@ -105,11 +105,11 @@ def api_sc_price():
     # price = askQuery(features, is_buy)
     price = item_costs[data['item']]["buy_price"] if is_buy else item_costs[data['item']]["sell_price"]
     
-    wei = price * (10**18)
+    price_wei = price * (10**18)
     
-    return_dict = {"price" : wei, "refund" : eth_sent - wei,}
+    return_dict = {"price" : wei, "refund" : eth_sent - price_wei,}
     
-    if(wei <= eth_sent):
+    if(price_wei <= eth_sent):
         features, label = parse_data(int(data['rarity']), int(data['level']), 
                              int(data['weight']), int(data['defense']), 
                              int(data['damage']), int(data['range']),
