@@ -3,7 +3,7 @@ from flask import Flask, request
 # Lines of code to enter to start up flask app for debugging or testing
 
 ''' 
-export FLASK_APP=online
+export FLASK_APP=ai
 export FLASK_ENV=development
 flask run
 '''
