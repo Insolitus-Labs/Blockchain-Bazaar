@@ -1,46 +1,70 @@
 from flask import Flask, abort, request, send_from_directory
-
+from flask_cors import CORS
 import ssl
 import requests
+import json
 
 app = Flask(__name__)
+
+CORS(app)
 
 host = "127.0.0.1"
 port = 5000
 debug = False
 
-# https://bazzar.mooo.com/price?rarity=10&level=1&weight=2&defense=3&damage=4&range=56&speed=1&order_type=1
+items = None
+with open("items.json", "r") as f_in:
+    items = json.loads(f_in.read())
 
 @app.route("/", methods=['GET','POST'])
 def index():
     return "Blockchain Bazzar"
 
+@app.route("/get_all_items", methods=["GET"])
+def api_get_items():
+    global items
+    for i in items:
+        features, _ = parse_data(int(i['rarity']), int(i['level']), 
+                                 int(i['weight']), int(i['defense']), 
+                                 int(i['damage']), int(i['range']),
+                                 int(i['speed']), 0)
+
+        # request AI for prices
+        buy_price = askQuery(features, 1) # Buy
+        sell_price = askQuery(features, 0) # Sell
+        
+        i["buy_price"] = buy_price / 1000   # Eth
+        i["sell_price"] = sell_price / 1000 # Eth
+        
+        i["uri"] = f"item={i['item']}&rarity={i['rarity']}&level={i['level']}&weight={i['weight']}&defense={i['defense']}&damage={i['damage']}&range={i['range']}&speed={i['speed']}"
+
+    return items
+
 
 @app.route("/price", methods=['GET'])
 def api_price():
 
-    is_buy = int(request.args.get('order_type'))
+    buy_or_sell = request.args.get('order_type')
 
     data = request.args
-    
+
     features, _ = parse_data(int(data['rarity']), int(data['level']), 
                              int(data['weight']), int(data['defense']), 
                              int(data['damage']), int(data['range']),
                              int(data['speed']), 0)
-    
-    # request AI for prices
-    price = askQuery(features, is_buy) * 10**16
-    
-    return {"price" : price}
 
-# https://bazzar.mooo.com/smart_contract_price?rarity=10&level=1&weight=2&defense=3&damage=4&range=56&speed=1&order_type=0&eth=5
+    # request AI for prices
+    price = askQuery(features, 0 if buy_or_sell=="sell" else 1) * (10^18 / 1000) # WEI
+
+    return {"price" : price}
 
 
 @app.route("/smart_contract_price", methods=['GET'])
 def api_sc_price():
 
+    print("request:",request.args)
     eth_sent = int(request.args.get('eth'))
-    is_buy = request.args.get('order_type')
+    buy_or_sell = request.args.get('order_type')
     
     data = request.args
     
@@ -50,17 +74,17 @@ def api_sc_price():
                              int(data['speed']), 0)
     
     # request AI for prices
-    price = askQuery(features, is_buy) * 10**16
+    price = askQuery(features, 0 if buy_or_sell=="sell" else 1) * (10^18 / 1000) # WEI
     
     if(price <= eth_sent):
         features, label = parse_data(int(data['rarity']), int(data['level']), 
                              int(data['weight']), int(data['defense']), 
                              int(data['damage']), int(data['range']),
                              int(data['speed']), price)
-        giveData(features, label, is_buy)
+        giveData(features, label, 0 if buy_or_sell=="sell" else 1)
         # AI.update_price(buy_or_sell,damage,weight)
     
-    return {"price" : price, "refund" : eth_sent - price}
+    return {"price" : price,"refund" : eth_sent - price}
 
 
 import re, numpy as np
@@ -77,7 +101,7 @@ nchoices = 100
 # for debugging and testing purposes
 
 ''' explanation of parameters:
-nchoices              - sets number of arms, 100 arms used, each representing the 10 closest values for a total of 1000
+nchoices              - sets number of arms, 100 arms used, each representing the 10 closest values for a total of 1000b
 
 beta_prior            - used to set the way arms behave
                           'auto' makes them choose from a random distribution when they don't have much data
@@ -258,4 +282,5 @@ for model in range (2):
 
 if __name__ == "__main__":
     app.run(host=host, port=port, debug=debug, ssl_context=None)
+
 
