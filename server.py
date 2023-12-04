@@ -105,7 +105,7 @@ def api_sc_price():
     # price = askQuery(features, is_buy)
     price = item_costs[data['item']]["buy_price"] if is_buy else item_costs[data['item']]["sell_price"]
     
-    wei = price * (10**18) / 10000
+    wei = price * (10**18)
     
     return_dict = {"price" : wei, "refund" : eth_sent - wei,}
     
