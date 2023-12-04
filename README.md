@@ -47,7 +47,7 @@ Feature design for AI
 
 Output design for AI
 - Output will be in increments of 20
-- taking weights of different arms should allow 100 arms of increments of 20 to output all 1000 values
+- taking weights of different arms should allow 50 arms of increments of 20 to output all 1000 values
 - keeping the number of arms lower will increase reward density and allow for better training
 
 
