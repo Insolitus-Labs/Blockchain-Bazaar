@@ -33,8 +33,8 @@ def api_get_items():
         buy_price = askQuery(features, 1) # Buy
         sell_price = askQuery(features, 0) # Sell
         
-        i["buy_price"] = buy_price / 1000   # Eth
-        i["sell_price"] = sell_price / 1000 # Eth
+        i["buy_price"] = buy_price / 10000   # Eth
+        i["sell_price"] = sell_price / 10000 # Eth
         
         i["uri"] = f"item={i['item']}&rarity={i['rarity']}&level={i['level']}&weight={i['weight']}&defense={i['defense']}&damage={i['damage']}&range={i['range']}&speed={i['speed']}"
 
@@ -44,7 +44,7 @@ def api_get_items():
 @app.route("/price", methods=['GET'])
 def api_price():
 
-    buy_or_sell = request.args.get('order_type')
+    is_buy = int(request.args.get('order_type'))
 
     data = request.args
 
@@ -54,7 +54,7 @@ def api_price():
                              int(data['speed']), 0)
 
     # request AI for prices
-    price = askQuery(features, 0 if buy_or_sell=="sell" else 1) * (10^18 / 1000) # WEI
+    price = askQuery(features, is_buy) * (10**18) / 10000 # WEI
 
     return {"price" : price}
 
@@ -64,7 +64,7 @@ def api_sc_price():
 
     print("request:",request.args)
     eth_sent = int(request.args.get('eth'))
-    buy_or_sell = request.args.get('order_type')
+    is_buy = int(request.args.get('order_type'))
     
     data = request.args
     
@@ -74,14 +74,14 @@ def api_sc_price():
                              int(data['speed']), 0)
     
     # request AI for prices
-    price = askQuery(features, 0 if buy_or_sell=="sell" else 1) * (10^18 / 1000) # WEI
+    price = askQuery(features, is_buy) * (10Z**18) / 10000 # WEI
     
     if(price <= eth_sent):
         features, label = parse_data(int(data['rarity']), int(data['level']), 
                              int(data['weight']), int(data['defense']), 
                              int(data['damage']), int(data['range']),
                              int(data['speed']), price)
-        giveData(features, label, 0 if buy_or_sell=="sell" else 1)
+        giveData(features, label, is_buy)
         # AI.update_price(buy_or_sell,damage,weight)
     
     return {"price" : price,"refund" : eth_sent - price}

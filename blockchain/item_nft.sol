@@ -36,6 +36,7 @@ contract BlockChainBazaar is  ERC721URIStorage, Ownable, FunctionsClient  {
       string uri;
     }
 
+    event returnId(address user, uint256 id);
     event RequestPrice(bytes32 indexed requestId, uint256 price);
 
     constructor() FunctionsClient(router) ERC721("Temp Item", "TMP") Ownable(msg.sender) {
@@ -150,7 +151,9 @@ contract BlockChainBazaar is  ERC721URIStorage, Ownable, FunctionsClient  {
 
         _mint(o.caller_id,mint_count);
         _setTokenURI(mint_count,o.uri);
-		    mint_count += 1;
+        emit returnId(o.caller_id,mint_count);
+
+        mint_count += 1;
     }
 
     function sell(Order memory o, uint256 cost) public payable {
