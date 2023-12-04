@@ -1,53 +1,7 @@
-from flask import Flask, request
+# This is a non flask version of the final code which
+# also includes several graphs to show how the AI is running
 
-'''
-export FLASK_APP=online
-export FLASK_ENV=development
-flask run
-'''
-
-ai = Flask(__name__)
-
-@ai.route('/sell')
-def sell():
-  data = request.args
-  if len(data) == 7:
-    features, _ = parse_data(int(data['rarity']), int(data['level']), 
-                             int(data['weight']), int(data['defense']), 
-                             int(data['damage']), int(data['range']),
-                             int(data['speed']), 0)
-    return(str(askQuery(features, 0)))
-  else:
-    if len(data) == 8:
-      features, label = parse_data(int(data['rarity']), int(data['level']), 
-                             int(data['weight']), int(data['defense']), 
-                             int(data['damage']), int(data['range']),
-                             int(data['speed']), int(data['price']))
-      giveData(features, label, 0)
-      return("Data received")
-  return("Bad call")
-
-@ai.route('/buy')
-def buy():
-  data = request.args
-  if len(data) == 7:
-    features, _ = parse_data(int(data['rarity']), int(data['level']), 
-                             int(data['weight']), int(data['defense']), 
-                             int(data['damage']), int(data['range']),
-                             int(data['speed']), 0)
-    return(str(askQuery(features, 1)))
-  else:
-    if len(data) == 8:
-      features, label = parse_data(int(data['rarity']), int(data['level']), 
-                             int(data['weight']), int(data['defense']), 
-                             int(data['damage']), int(data['range']),
-                             int(data['speed']), int(data['price']))
-      giveData(features, label, 1)
-      return("Data received")
-  return("Bad call")
-
-
-import re, numpy as np
+import numpy as np
 from contextualbandits.online import LinUCB
 
 # batch size - algorithm will be refit after N rounds
@@ -102,27 +56,6 @@ rewards = {
   1: buyer_rewards
 }
 
-# function to run through a single round given one piece of data and its label
-# modelId is 0 for seller and 1 for buyer
-def single_round(data, label, modelId):
-    
-    # choosing actions for this batch
-    action = models[modelId].predict(data).astype('uint8')
-    
-    # keeping track of the sum of rewards received
-    rewards[modelId].append(label[action])
-    
-    # adding this batch to the history of selected actions
-    new_actions_hist = np.append(actions[modelId], action)
-    
-    # rewards obtained now
-    reward = label[action]
-    
-    # now refitting the algorithms after observing these new rewards
-    models[modelId].partial_fit(data, action, reward)
-    
-    return new_actions_hist
-
 # takes the stats of an item and returns the two arrays needed by the model
 def parse_data(rarity, level, weight, defense, damage, a_range, speed, price):
   label = np.zeros(100)
@@ -136,23 +69,44 @@ def parse_data(rarity, level, weight, defense, damage, a_range, speed, price):
 def askQuery(data, modelId):
   top5 = models[modelId].topN(data, 5) * 10
   if modelId == 0:
-    top5[::-1].sort()
+    top5[0][::-1].sort()
   else:
-    top5.sort()
-  print(top5)
+    top5[0].sort()
+  
   answer = 0
   for i in range(5):
-    if i < 3:
+    if i < 4:
       answer += top5[0,i] / 2**(i + 1)
     else:
       answer += top5[0,i] / 2**(i)
+
   return(round(answer))
 
 # given data (features of an item), a label (array with binary label data) and a modelId
 # runs a single round (partial fit with new data) with batch size 1 (only this new data) on the specified model
 def giveData(data, label, modelId):
-  single_round(data, label, modelId)
+    # choosing actions for this batch
+    action = models[modelId].predict(data).astype('uint8')
+    
+    # keeping track of the sum of rewards received
+    rewards[modelId].append(label[action])
+    
+    # adding this batch to the history of selected actions
+    new_actions_hist = np.append(actions[modelId], action)
+    
+    # rewards obtained now
+    reward = label[action]
+    
+    # now refitting the algorithms after observing these new rewards
+    models[modelId].fit(data, action, reward)
+    
+    return new_actions_hist
 
+# takes an int and returns the proper structure of the data for the model
+def makeLabel(price):
+  label = np.zeros(100)
+  label[int( round( price / 10) ) ] = 1
+  return label
 
 ################ Offline Pretraining  ################
 # random data follows the pattern of label being the addition of all stats
@@ -225,7 +179,7 @@ actions[1] = action_chosen.copy()
 
 # running all pre-training rounds
 for model in range (2):
-  print(model)
+  print("Starting Training For Model: " + str(model))
   for i in range(int(np.floor(X.shape[0] / batch_size)) - 1):
     batch_st = (i + 1) * batch_size
     batch_end = (i + 2) * batch_size
@@ -238,9 +192,11 @@ for model in range (2):
                                                    actions[model],
                                                    X_batch, y_batch,
                                                    rnd_seed = batch_st)
+print("Finished Training")
 
-# not needed for final product but used for pre-integration testing --------------------------------------------
-'''    
+################ Graph Creation  ################
+# this first grah shows the two models training and the average
+# reward they receive where 1 is perfect and 0.01 is random chance
 import matplotlib.pyplot as plt
 from pylab import rcParams
 
@@ -255,21 +211,52 @@ cmap = plt.get_cmap('tab20')
 colors=plt.cm.tab20(np.linspace(0, 1, 20))
 rcParams['figure.figsize'] = 15, 7
 
-ax = plt.subplot(111)
-plt.plot(get_mean_reward(rewards[0]), label="Seller", linewidth=lwd,color=colors[0])
-plt.plot(get_mean_reward(rewards[1]), label="Buyer", linewidth=lwd,color=colors[1])
+plt.plot(get_mean_reward(rewards[0]), label="Seller", linewidth=5,color=colors[0])
+plt.plot(get_mean_reward(rewards[1]), label="Buyer", linewidth=5,color=colors[5])
 
-box = ax.get_position()
-ax.set_position([box.x0, box.y0 + box.height * 0.1,
-                 box.width, box.height * 1.25])
-ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
           fancybox=True, ncol=3, prop={'size':20})
-
-plt.tick_params(axis='both', which='major', labelsize=25)
-plt.xticks([i*40 for i in range(8)], [i*2000 for i in range(8)])
 
 plt.xlabel('Rounds (models were updated every 50 rounds)', size=30)
 plt.ylabel('Cumulative Mean Reward', size=30)
 plt.grid()
 plt.show()
-'''
+
+# this next graph is used to show how the two models react to 
+# economic pressures where the same item is bought or sold very
+# frequently
+seller_data = list()
+seller_avg = 0
+buyer_data = list()
+buyer_avg = 0
+item = np.array([2, 40, 35, 0, 85, 14, 6])
+
+for i in range(1000):
+  # get the current price for the item
+  seller_price = askQuery(item, 0)
+  buyer_price = askQuery(item, 1)
+
+  # make the transaction at that price
+  giveData(item, makeLabel(seller_price), 0)
+  giveData(item, makeLabel(buyer_price), 1)
+
+  seller_avg += seller_price
+  buyer_avg += buyer_price
+  if i % 10 == 0:
+    # remeber the datapoints every 10 items
+    seller_data.append(int(seller_avg/ 10))
+    seller_avg = 0
+    buyer_data.append(int(buyer_avg / 10))
+    buyer_avg = 0
+
+
+plt.scatter(range(100), seller_data,label="Seller",color=colors[0])
+plt.scatter(range(100), buyer_data,label="Buyer",color=colors[5])
+
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+          fancybox=True, ncol=3, prop={'size':20})
+
+plt.xlabel('Amount Sold/Bought', size=30)
+plt.ylabel('Price', size=30)
+plt.grid()
+plt.show()
