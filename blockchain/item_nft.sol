@@ -5,6 +5,7 @@ import  "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_0/libraries/FunctionsRequest.sol";
@@ -48,7 +49,7 @@ contract BlockChainBazaar is  ERC721URIStorage, Ownable, FunctionsClient  {
       //getCost(msg.sender,false,0x0,msg.value);
     }
 
-    /* */
+
     uint256 public price;
     function test_mint(string memory uri) public returns(uint256) {
       _mint(msg.sender,mint_count);
@@ -71,20 +72,37 @@ contract BlockChainBazaar is  ERC721URIStorage, Ownable, FunctionsClient  {
 
     }
 
-    string source =
+    // string source =
+    //     "const apiResponse = await Functions.makeHttpRequest({"
+    //     "url: `https://bazzar.mooo.com/smart_contract_price?`" /* Concat URI with in the URL to protect against forgery */
+    //     "});"
+    //     "if (apiResponse.error) {"
+    //     "throw Error('Request failed');"
+    //     "}"
+    //     "const { data } = apiResponse;"
+    //     "const val = parseInt(data.RAW.ETH.USD.VOLUME24HOUR);"
+    //     "return Functions.encodeUint256(val);"; /* TODO */
+
+
+    function getCost(address sender, bool order_type, uint256 token_id, uint256 value, string memory uri) public returns(bytes32) {
+      string memory source1 =
         "const apiResponse = await Functions.makeHttpRequest({"
-        "url: `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD`" /* Concat URI with in the URL to protect against forgery */
+        "url: `"; /* Concat URI with in the URL to protect against forgery */
+      string memory source2 = "`"
         "});"
         "if (apiResponse.error) {"
         "throw Error('Request failed');"
         "}"
         "const { data } = apiResponse;"
-        "const val = parseInt(data.RAW.ETH.USD.VOLUME24HOUR);"
-        "return Functions.encodeUint256(val);"; /* TODO */
+        "const val = parseInt(data.price);"
+        "return Functions.encodeUint256(val);";
 
+      string memory url = "https://bazzar.mooo.com/smart_contract_price?";
 
-    function getCost(address sender, bool order_type, uint256 token_id, uint256 value, string memory uri) public returns(bytes32) {
-      
+      string memory _order_type = order_type==false ? "0" : "1";
+
+      string memory source = string.concat(source1,url,uri,"&order_type=",_order_type,"&eth=",Strings.toString(value),source2);
+
       FunctionsRequest.Request memory req;
       req.initializeRequestForInlineJavaScript(source);
 
@@ -121,11 +139,15 @@ contract BlockChainBazaar is  ERC721URIStorage, Ownable, FunctionsClient  {
     }
 
     function buy(Order memory o, uint256 cost) public payable {
-        /*if(o.value < cost){
+        if(o.value < cost){
             (bool success,) = o.caller_id.call{gas:10000,value:o.value}("");
             require(success,"Cannot Refund Eth");
             return;
-        }*/
+        }
+
+        (bool success2,) = o.caller_id.call{gas:10000,value:o.value-cost}("");
+		    require(success2,"Cannot Send Eth");
+
         _mint(o.caller_id,mint_count);
         _setTokenURI(mint_count,o.uri);
 		    mint_count += 1;
