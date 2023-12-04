@@ -36,7 +36,6 @@ The AI is going to be used to alter prices for both buying and selling of items 
 - Update pricing to the UI which can be queried by the oracle
 
 Feature design for AI
-- Only the first feature represented in binary manner as model can handle either
 - Not every item has all stats, in this case the stat is simply 0
 - 0 rarity
 - 1 level
