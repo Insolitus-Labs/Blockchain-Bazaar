@@ -1,0 +1,31 @@
+[{
+	"item":"bow",
+	"rarity":10,
+	"level":1,
+	"weight":2,
+	"defense":3,
+	"damage":4,
+	"range":56,
+	"speed":1
+},
+{
+	"item":"sword",
+	"rarity":10,
+	"level":1,
+	"weight":2,
+	"defense":3,
+	"damage":4,
+	"range":1,
+	"speed":1
+},
+{
+	"item":"shield",
+	"rarity":10,
+	"level":1,
+	"weight":2,
+	"defense":100,
+	"damage":4,
+	"range":0,
+	"speed":1
+}
+]

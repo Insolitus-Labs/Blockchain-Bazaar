@@ -2,13 +2,14 @@
 # also includes several graphs to show how the AI is running
 
 import numpy as np
+from copy import deepcopy
 from contextualbandits.online import LinUCB
 
 # batch size - algorithm will be refit after N rounds
 # used during pre-training
 batch_size = 50
 # there are 100 outputs possible by the model
-nchoices = 100
+nchoices = 50
 
 # models, action history, and rewards are stored in a map with key as modelId
 # create both the map and global variables to allow for either way of calling
@@ -20,7 +21,7 @@ nchoices              - sets number of arms, 100 arms used, each representing th
 beta_prior            - used to set the way arms behave
                           'auto' makes them choose from a random distribution when they don't have much data
 
-alpha                 - controls upper confidence bound, higher values increase exploration, a lower value is recommended
+alpha                 - controls upper confidence bound, higher values increase exploration
 
 ucb_from_empty        - controls whether arms without data are chosen from based on policy
                           we use bet_prior for better control of this so it isn't needed
@@ -58,16 +59,16 @@ rewards = {
 
 # takes the stats of an item and returns the two arrays needed by the model
 def parse_data(rarity, level, weight, defense, damage, a_range, speed, price):
-  label = np.zeros(100)
-  label[int( round( price / 10) ) ] = 1
+  label = np.zeros(50)
+  label[int( int( price / 20) ) ] = 1
   features = np.array([rarity, level, weight, defense, damage, a_range, speed])
   return features, label
 
 # given a piece of data (features of an item) and a modelId (seller or buyer)
-# currently prints but should return a weighted answer of the top 5 arms chosen
-# top arm accoutns for 50% with each subsequent arm counting for less
+# returns the pricing from that model by combining the top 5 results
 def askQuery(data, modelId):
-  top5 = models[modelId].topN(data, 5) * 10
+  top5 = models[modelId].topN(data, 5) * 20
+
   if modelId == 0:
     top5[0][::-1].sort()
   else:
@@ -80,12 +81,12 @@ def askQuery(data, modelId):
     else:
       answer += top5[0,i] / 2**(i)
 
-  return(round(answer))
+  return(int(answer))
 
 # given data (features of an item), a label (array with binary label data) and a modelId
 # runs a single round (partial fit with new data) with batch size 1 (only this new data) on the specified model
 def giveData(data, label, modelId):
-    # choosing actions for this batch
+    # choosing actions for this item
     action = models[modelId].predict(data).astype('uint8')
     
     # keeping track of the sum of rewards received
@@ -105,38 +106,39 @@ def giveData(data, label, modelId):
 # takes an int and returns the proper structure of the data for the model
 def makeLabel(price):
   label = np.zeros(100)
-  label[int( round( price / 10) ) ] = 1
+  label[int( round( price / 20) ) ] = 1
   return label
 
 ################ Offline Pretraining  ################
-# random data follows the pattern of label being the addition of all stats
+# random data follows the pattern of label being the sum of all stats
 # stats are generated with np.random
 def create_data(amount):
   features = np.empty(shape=(amount, 7))
-  labels = np.empty(shape=(amount, 100))
+  labels = np.empty(shape=(amount, 50))
   for i in range(amount):
     type = np.random.randint(0,2)
     if type == 0: # defense i.e. armor
-      rarity = np.random.randint(0, 3)
-      level = np.random.randint(0, 99)
-      weight = np.random.randint(0, 99)
-      defense = np.random.randint(0, 99)
-      price = rarity + level + weight + defense
+      rarity = np.random.randint(0, 4)
+      level = np.random.randint(rarity * 5, rarity * 25 + 25)
+      weight = np.random.randint(0, 100)
+      defense = np.random.randint(rarity * 5, rarity * 25 + 25)
+      price = rarity * 25 + level + weight * 2 + defense
+      price = defense + level
       features[i], labels[i] = parse_data(rarity, level, weight, defense, 0, 0, 0, price)
     if type == 1: # offense i.e weapon
-      rarity = np.random.randint(0, 3)
-      level = np.random.randint(0, 99)
-      weight = np.random.randint(0, 99)
-      damage = np.random.randint(0, 99)
-      a_range = np.random.randint(0, 99)
-      speed = np.random.randint(0, 99)
-      price = rarity + level + weight + damage + speed + a_range
+      rarity = np.random.randint(0, 4)
+      level = np.random.randint(rarity * 5, rarity * 25 + 25)
+      weight = np.random.randint(0, 100)
+      damage = np.random.randint(rarity * 5, rarity * 25 + 25)
+      a_range = np.random.randint(rarity * 5, rarity * 25 + 25)
+      speed = np.random.randint(rarity * 5, rarity * 25 + 25)
+      price = rarity * 25 + level + weight * 2 + damage + a_range + speed
       features[i], labels[i] = parse_data(rarity, level, weight, 0, damage, a_range, speed, price)
     if type == 2: # misc
-      rarity = np.random.randint(0, 3)
-      level = np.random.randint(0, 99)
-      weight = np.random.randint(0, 99)
-      price = rarity + level + weight
+      rarity = np.random.randint(0, 4)
+      level = np.random.randint(rarity * 5, rarity * 25 + 25)
+      weight = np.random.randint(0, 100)
+      price = rarity * 25 + level + weight * 2
       features[i], labels[i] = parse_data(rarity, level, weight, 0, 0, 0, 0, price)
   return features, labels
 
@@ -195,8 +197,8 @@ for model in range (2):
 print("Finished Training")
 
 ################ Graph Creation  ################
-# this first grah shows the two models training and the average
-# reward they receive where 1 is perfect and 0.01 is random chance
+# this graph shows the two models training and the average
+# rewards they receive where 1 is perfect and 0.01 is random chance
 import matplotlib.pyplot as plt
 from pylab import rcParams
 
@@ -219,44 +221,5 @@ plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
 
 plt.xlabel('Rounds (models were updated every 50 rounds)', size=30)
 plt.ylabel('Cumulative Mean Reward', size=30)
-plt.grid()
-plt.show()
-
-# this next graph is used to show how the two models react to 
-# economic pressures where the same item is bought or sold very
-# frequently
-seller_data = list()
-seller_avg = 0
-buyer_data = list()
-buyer_avg = 0
-item = np.array([2, 40, 35, 0, 85, 14, 6])
-
-for i in range(1000):
-  # get the current price for the item
-  seller_price = askQuery(item, 0)
-  buyer_price = askQuery(item, 1)
-
-  # make the transaction at that price
-  giveData(item, makeLabel(seller_price), 0)
-  giveData(item, makeLabel(buyer_price), 1)
-
-  seller_avg += seller_price
-  buyer_avg += buyer_price
-  if i % 10 == 0:
-    # remeber the datapoints every 10 items
-    seller_data.append(int(seller_avg/ 10))
-    seller_avg = 0
-    buyer_data.append(int(buyer_avg / 10))
-    buyer_avg = 0
-
-
-plt.scatter(range(100), seller_data,label="Seller",color=colors[0])
-plt.scatter(range(100), buyer_data,label="Buyer",color=colors[5])
-
-plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-          fancybox=True, ncol=3, prop={'size':20})
-
-plt.xlabel('Amount Sold/Bought', size=30)
-plt.ylabel('Price', size=30)
 plt.grid()
 plt.show()
