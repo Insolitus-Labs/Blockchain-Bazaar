@@ -1,6 +1,7 @@
 from flask import Flask, request
 
 # Lines of code to enter to start up flask app for debugging or testing
+
 ''' 
 export FLASK_APP=online
 export FLASK_ENV=development
@@ -59,7 +60,7 @@ from contextualbandits.online import LinUCB
 # used during pre-training
 batch_size = 50
 # there are 100 outputs possible by the model
-nchoices = 100
+nchoices = 50
 
 # models are stored in a map with key as modelId
 # create both the map and global variables to allow for either way of calling
@@ -81,9 +82,9 @@ random_state          - sets the random seed for this model, used in exploration
 assume_unique_reward  - causes the model to assume there can only be one label for each data point
                           this creates negative labels for other arms to also fit from
 '''
-seller = LinUCB(nchoices = nchoices, beta_prior = 'auto', alpha = 0.1,
+seller = LinUCB(nchoices = nchoices, beta_prior = 'auto', alpha = 0.5,
                 ucb_from_empty = False, random_state = 1111, assume_unique_reward = True)
-buyer = LinUCB(nchoices = nchoices, beta_prior = 'auto', alpha = 0.1,
+buyer = LinUCB(nchoices = nchoices, beta_prior = 'auto', alpha = 0.5,
                 ucb_from_empty = False, random_state = 2222, assume_unique_reward = True)
 
 models = {
@@ -93,16 +94,15 @@ models = {
 
 # takes the stats of an item and returns the two arrays needed by the model
 def parse_data(rarity, level, weight, defense, damage, a_range, speed, price):
-  label = np.zeros(100)
-  label[int( round( price / 10) ) ] = 1
+  label = np.zeros(50)
+  label[int( round( price / 20) ) ] = 1
   features = np.array([rarity, level, weight, defense, damage, a_range, speed])
   return features, label
 
 # given a piece of data (features of an item) and a modelId (seller or buyer)
-# currently prints but should return a weighted answer of the top 5 arms chosen
-# top arm accoutns for 50% with each subsequent arm counting for less
+# returns the pricing of that model by combing the top 5 results
 def askQuery(data, modelId):
-  top5 = models[modelId].topN(data, 5) * 10
+  top5 = models[modelId].topN(data, 5) * 20
   if modelId == 0:
     top5[0][::-1].sort()
   else:
@@ -129,34 +129,35 @@ def giveData(data, label, modelId):
 
 
 ################ Offline Pretraining  ################
-# random data follows the pattern of label being the addition of all stats
+# random data follows the pattern of label being the sum of all stats
 # stats are generated with np.random
 def create_data(amount):
   features = np.empty(shape=(amount, 7))
-  labels = np.empty(shape=(amount, 100))
+  labels = np.empty(shape=(amount, 50))
   for i in range(amount):
     type = np.random.randint(0,2)
     if type == 0: # defense i.e. armor
-      rarity = np.random.randint(0, 3)
-      level = np.random.randint(0, 99)
-      weight = np.random.randint(0, 99)
-      defense = np.random.randint(0, 99)
-      price = rarity + level + weight + defense
+      rarity = np.random.randint(0, 4)
+      level = np.random.randint(rarity * 5, rarity * 25 + 25)
+      weight = np.random.randint(0, 100)
+      defense = np.random.randint(rarity * 5, rarity * 25 + 25)
+      price = rarity * 25 + level + weight * 2 + defense
+      price = defense + level
       features[i], labels[i] = parse_data(rarity, level, weight, defense, 0, 0, 0, price)
     if type == 1: # offense i.e weapon
-      rarity = np.random.randint(0, 3)
-      level = np.random.randint(0, 99)
-      weight = np.random.randint(0, 99)
-      damage = np.random.randint(0, 99)
-      a_range = np.random.randint(0, 99)
-      speed = np.random.randint(0, 99)
-      price = rarity + level + weight + damage + speed + a_range
+      rarity = np.random.randint(0, 4)
+      level = np.random.randint(rarity * 5, rarity * 25 + 25)
+      weight = np.random.randint(0, 100)
+      damage = np.random.randint(rarity * 5, rarity * 25 + 25)
+      a_range = np.random.randint(rarity * 5, rarity * 25 + 25)
+      speed = np.random.randint(rarity * 5, rarity * 25 + 25)
+      price = rarity * 25 + level + weight * 2 + damage + a_range + speed
       features[i], labels[i] = parse_data(rarity, level, weight, 0, damage, a_range, speed, price)
     if type == 2: # misc
-      rarity = np.random.randint(0, 3)
-      level = np.random.randint(0, 99)
-      weight = np.random.randint(0, 99)
-      price = rarity + level + weight
+      rarity = np.random.randint(0, 4)
+      level = np.random.randint(rarity * 5, rarity * 25 + 25)
+      weight = np.random.randint(0, 100)
+      price = rarity * 25 + level + weight * 2
       features[i], labels[i] = parse_data(rarity, level, weight, 0, 0, 0, 0, price)
   return features, labels
 
@@ -173,7 +174,7 @@ def simulate_rounds_stoch(model, X_batch, y_batch, rnd_seed):
     np.random.seed(rnd_seed)
     model.partial_fit(X_batch, actions_this_batch, rewards_batch)
 
-X, y = create_data(15000)
+X, y = create_data(10000)
 
 # fitting models for the first time
 first_batch = X[:batch_size, :]
