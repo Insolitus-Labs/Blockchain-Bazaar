@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import MetaMask from '../components/metamask';
+import MetaMask from '../components/MetaMask';
 
 export default function Root() {
     return (
@@ -10,9 +10,6 @@ export default function Root() {
                     <ul>
                         <li>
                             <a href={'/shop'}>Shop</a>
-                        </li>
-                        <li>
-                            <a href={'/items'}>Items</a>
                         </li>
                     </ul>
                 </nav>
