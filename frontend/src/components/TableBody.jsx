@@ -1,7 +1,7 @@
 import contract from '../contracts/contract.json';
 
 const ethers = require("ethers");
-const contractAddress = "0x8D4785b5868B883490461C71464f234DDd6f135F";
+const contractAddress = "0xd927DD054f1B1C5a4BC56b8C71aB5e598d667713";
 const abi = contract;
 
 const TableBody = ({ tableData, columns }) => {
