@@ -36,7 +36,6 @@ The AI is going to be used to alter prices for both buying and selling of items 
 - Update pricing to the UI which can be queried by the oracle
 
 Feature design for AI
-- Only the first feature represented in binary manner as model can handle either
 - Not every item has all stats, in this case the stat is simply 0
 - 0 rarity
 - 1 level
@@ -48,7 +47,7 @@ Feature design for AI
 
 Output design for AI
 - Output will be in increments of 20
-- taking weights of different arms should allow 100 arms of increments of 20 to output all 1000 values
+- taking weights of different arms should allow 50 arms of increments of 20 to output all 1000 values
 - keeping the number of arms lower will increase reward density and allow for better training
 
 
