@@ -12,10 +12,16 @@ host = "127.0.0.1"
 port = 5000
 debug = False
 
+
+
 items = None
 with open("items.json", "r") as f_in:
     items = json.loads(f_in.read())
 
+item_costs = dict()
+
+    
+        
 @app.route("/", methods=['GET','POST'])
 def index():
     return "Blockchain Bazzar"
@@ -23,22 +29,44 @@ def index():
 @app.route("/get_all_items", methods=["GET"])
 def api_get_items():
     global items
+    
+    
+    if(len(item_costs) == 0):
+        for i in items:
+            features, _ = parse_data(int(i['rarity']), int(i['level']), 
+                                     int(i['weight']), int(i['defense']), 
+                                     int(i['damage']), int(i['range']),
+                                     int(i['speed']), 0)
+
+            # request AI for prices
+            buy_price = askQuery(features, 1) / 10000 # Buy
+            sell_price = askQuery(features, 0) / 10000 # Sell
+            
+            item_costs[i['item']] = {"buy_price": buy_price, "sell_price": sell_price}
+    
+    new_items = list()
+    
     for i in items:
         features, _ = parse_data(int(i['rarity']), int(i['level']), 
                                  int(i['weight']), int(i['defense']), 
-                                 int(i['damage']), int(i['range']),
+                                 int(i['damage']), int(i['range']), 
                                  int(i['speed']), 0)
-
+        
+        tmp_i = dict(i)
+        tmp_i["buy_price"] = item_costs[i['item']]["buy_price"]
+        tmp_i["sell_price"] = item_costs[i['item']]["sell_price"]
+        
         # request AI for prices
-        buy_price = askQuery(features, 1) # Buy
-        sell_price = askQuery(features, 0) # Sell
+        # buy_price = askQuery(features, 1) # Buy
+        # sell_price = askQuery(features, 0) # Sell
         
-        i["buy_price"] = buy_price / 10000   # Eth
-        i["sell_price"] = sell_price / 10000 # Eth
+        # i["buy_price"] = buy_price / 10000   # Eth
+        # i["sell_price"] = sell_price / 10000 # Eth
         
-        i["uri"] = f"item={i['item']}&rarity={i['rarity']}&level={i['level']}&weight={i['weight']}&defense={i['defense']}&damage={i['damage']}&range={i['range']}&speed={i['speed']}"
-
-    return items
+        tmp_i["uri"] = f"item={i['item']}&rarity={i['rarity']}&level={i['level']}&weight={i['weight']}&defense={i['defense']}&damage={i['damage']}&range={i['range']}&speed={i['speed']}"
+        new_items.append(tmp_i)
+        
+    return new_items
 
 
 @app.route("/price", methods=['GET'])
@@ -74,7 +102,10 @@ def api_sc_price():
                              int(data['speed']), 0)
     
     # request AI for prices
-    price = askQuery(features, is_buy) * (10Z**18) / 10000 # WEI
+    # price = askQuery(features, is_buy)
+    price = item_costs[data['item']]["buy_price"] if is_buy else item_costs[data['item']]["sell_price"]
+    
+    return_dict = {"price" : price * (10**18) / 10000,"refund" : eth_sent - price}
     
     if(price <= eth_sent):
         features, label = parse_data(int(data['rarity']), int(data['level']), 
@@ -82,9 +113,15 @@ def api_sc_price():
                              int(data['damage']), int(data['range']),
                              int(data['speed']), price)
         giveData(features, label, is_buy)
+        new_price = askQuery(features, is_buy) / 10000
+        
+        if(is_buy):
+            item_costs[data['item']]["buy_price"] = new_price
+        else:
+            item_costs[data['item']]["sell_price"] = new_price
         # AI.update_price(buy_or_sell,damage,weight)
     
-    return {"price" : price,"refund" : eth_sent - price}
+    return return_dict
 
 
 import re, numpy as np
