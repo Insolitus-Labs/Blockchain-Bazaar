@@ -38,17 +38,17 @@ The AI is going to be used to alter prices for both buying and selling of items 
 Feature design for AI
 - Only the first feature represented in binary manner as model can handle either
 - Not every item has all stats, in this case the stat is simply 0
-- 0 - 3 rarity
-- 4 level
-- 5 weight
-- 6 defense
-- 7 damage
-- 8 range
-- 9 speed
+- 0 rarity
+- 1 level
+- 2 weight
+- 3 defense
+- 5 damage
+- 6 range
+- 7 speed
 
 Output design for AI
-- Output will be in increments of 10
-- taking weights of different arms should allow 100 arms of increments of 10 to output all 1000 values
+- Output will be in increments of 20
+- taking weights of different arms should allow 100 arms of increments of 20 to output all 1000 values
 - keeping the number of arms lower will increase reward density and allow for better training
 
 
@@ -71,7 +71,11 @@ Metamask will be utilized as our player’s wallets and SepoliaETH as the curren
 2. The frontend has different package dependencies so do `npm install` again
 3. Start the user interface with `npm start`
 
-
+### AI
+1. Navigate to the ai folder
+2. run `pip install -r requirements.txt` 
+(contextualbandits may fail to install as current versions do not have pip wheel for windows.
+for this reason linux or a version of it such as ubuntu is recommended)
 
 ## Testing Plan
 The AI will be tested by graphing rewards over training times
